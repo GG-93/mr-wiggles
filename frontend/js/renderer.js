@@ -88,8 +88,9 @@ class Renderer {
       }
       const rings = this._rings.get(sig.id);
 
-      // Spawn a new ring every ~0.4s (adjusted by beat freq)
-      const spawnInterval = 0.4 / (sig.beatFreq || 0.5);
+      // Spawn a new ring every ~0.4s (adjusted by beat freq; guard against zero)
+      const beatFreqSafe = sig.beatFreq > 0 ? sig.beatFreq : 0.5;
+      const spawnInterval = 0.4 / beatFreqSafe;
       if (!sig._nextSpawn || this._time >= sig._nextSpawn) {
         sig._nextSpawn = this._time + spawnInterval;
         rings.push({

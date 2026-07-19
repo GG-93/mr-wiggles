@@ -59,12 +59,15 @@ function rssiToStrength(rssi) {
 }
 
 /**
- * Generate a simple random ID.
+ * Generate a simple random ID using crypto for uniqueness.
  * @param {number} [len=8]
  * @returns {string}
  */
 function randomId(len = 8) {
-  return Math.random().toString(36).slice(2, 2 + len).padEnd(len, '0');
+  const crypto = require('crypto');
+  return crypto.randomBytes(Math.ceil(len * 3 / 4))
+    .toString('base64url')
+    .slice(0, len);
 }
 
 /**

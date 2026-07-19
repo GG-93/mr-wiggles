@@ -31,13 +31,13 @@ class DemoSDR extends EventEmitter {
   constructor() {
     super();
     this._timer = null;
-    this._tick = 0;
+    this._tickCount = 0;
     this._signals = this._generateSignals();
   }
 
   start() {
     console.log(`[DemoSDR] Starting – ${SIGNAL_COUNT} synthetic signals at ${UPDATE_RATE_HZ} Hz`);
-    this._timer = setInterval(() => this._tick_(), INTERVAL_MS);
+    this._timer = setInterval(() => this._tick(), INTERVAL_MS);
   }
 
   stop() {
@@ -72,8 +72,8 @@ class DemoSDR extends EventEmitter {
     });
   }
 
-  _tick_() {
-    const t = this._tick++ * (INTERVAL_MS / 1000);
+  _tick() {
+    const t = this._tickCount++ * (INTERVAL_MS / 1000);
 
     const frames = this._signals.map((sig) => {
       // Slowly drift DoA
