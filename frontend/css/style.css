@@ -1,0 +1,240 @@
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Variables ──────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0a0a0a;
+  --surface: #111;
+  --surface2: #1a1a1a;
+  --border: #2a2a2a;
+  --text: #e8e8e8;
+  --text-muted: #888;
+  --accent: #00e5ff;
+  --accent2: #ff4081;
+  --located: #76ff03;
+  --panel-w: 280px;
+  --header-h: 52px;
+  --font: 'Courier New', Courier, monospace;
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────── */
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  overflow: hidden;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+}
+
+.header__logo {
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--accent);
+}
+
+.header__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+/* ── Status dot ─────────────────────────────────────────────────────────── */
+.status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-dot--disconnected { background: #f44336; }
+.status-dot--connecting   { background: #ff9800; animation: blink 1s infinite; }
+.status-dot--connected    { background: #4caf50; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  height: 100vh;
+  padding-top: var(--header-h);
+}
+
+/* ── Canvas ─────────────────────────────────────────────────────────────── */
+.canvas-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+#js-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Located banner ─────────────────────────────────────────────────────── */
+.located-banner {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--located);
+  color: #000;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 10px 28px;
+  border-radius: 4px;
+  letter-spacing: 2px;
+  animation: pulse-banner 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-banner {
+  from { box-shadow: 0 0 10px var(--located); }
+  to   { box-shadow: 0 0 30px var(--located), 0 0 60px var(--located); }
+}
+
+.hidden { display: none !important; }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: var(--panel-w);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+/* ── Panel ──────────────────────────────────────────────────────────────── */
+.panel {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel__title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+/* ── Signal select ──────────────────────────────────────────────────────── */
+.signal-select {
+  width: 100%;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px;
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.signal-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Info table ─────────────────────────────────────────────────────────── */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: normal;
+  padding: 3px 0;
+  white-space: nowrap;
+  width: 72px;
+}
+
+.info-table td {
+  color: var(--text);
+  padding: 3px 0;
+  word-break: break-all;
+}
+
+/* ── Signal list ─────────────────────────────────────────────────────────── */
+.signal-list {
+  list-style: none;
+}
+
+.signal-list__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.signal-list__item:hover { background: var(--surface2); padding-left: 4px; }
+.signal-list__item--target { color: var(--accent); }
+
+.signal-list__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.signal-list__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signal-list__rssi {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* ── Legend ─────────────────────────────────────────────────────────────── */
+.legend { list-style: none; }
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.legend__swatch {
+  width: 28px; height: 4px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.legend__swatch--ring     { background: #fff; }
+.legend__swatch--beat     { background: var(--accent); }
+.legend__swatch--thick    { background: #fff; height: 8px; }
+.legend__swatch--located  { background: var(--located); }
+
+/* ── Scrollbar ──────────────────────────────────────────────────────────── */
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }

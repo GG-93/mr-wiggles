@@ -1,0 +1,20 @@
+{
+  "name": "mr-wiggles-backend",
+  "version": "1.0.0",
+  "description": "Mr. Wiggles backend - SDR signal capture and WebSocket streaming",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test src/**/*.test.js 2>/dev/null || echo 'No tests found'"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ws": "^8.17.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
