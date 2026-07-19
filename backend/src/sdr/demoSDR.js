@@ -27,6 +27,15 @@ const SSID_POOL = [
   'Netgear_Fox', 'Linksys-2G', 'ASUS_RT', 'GoogleFiber',
 ];
 
+// Synthetic BLE device name pool
+const BLE_NAME_POOL = [
+  'iPhone 15', 'Galaxy S24', 'AirPods Pro', 'Pixel Watch',
+  'Tile Mate', 'Fitbit Charge', 'JBL Flip 6', 'Kindle',
+];
+
+// BLE advertising frequencies (MHz) for display
+const BLE_CHANNELS = [2402, 2426, 2480];
+
 class DemoSDR extends EventEmitter {
   constructor() {
     super();
@@ -51,25 +60,51 @@ class DemoSDR extends EventEmitter {
   // ── private ─────────────────────────────────────────────────────────────
 
   _generateSignals() {
-    return Array.from({ length: SIGNAL_COUNT }, (_, i) => {
-      const ch = WIFI_CHANNELS[i % WIFI_CHANNELS.length];
+    const wifiCount = Math.max(2, SIGNAL_COUNT - 2);
+    const bleCount  = SIGNAL_COUNT - wifiCount;
+
+    const wifiSignals = Array.from({ length: wifiCount }, (_, i) => {
+      const ch  = WIFI_CHANNELS[i % WIFI_CHANNELS.length];
       const mac = bufToMac(crypto.randomBytes(6));
       return {
-        id: randomId(),
-        ssid: SSID_POOL[i % SSID_POOL.length],
+        type:          'wifi',
+        id:            randomId(),
+        ssid:          SSID_POOL[i % SSID_POOL.length],
         mac,
-        baseRssi: -50 - Math.random() * 40,       // -50 to -90 dBm
-        baseDoa: Math.random() * 360,              // 0-360°
-        doaDrift: (Math.random() - 0.5) * 0.5,    // slow DoA drift per tick
-        freqMHz: ch.freq,
-        channel: ch.channel,
-        protocol: i < 3 ? 'IEEE 802.11n' : i === 3 ? 'IEEE 802.11ac' : 'IEEE 802.11ax',
-        rssiAmplitude: 5 + Math.random() * 10,    // RSSI fluctuation amplitude
-        rssiPhase: Math.random() * Math.PI * 2,
-        beatPhase: Math.random() * Math.PI * 2,
-        active: true,
+        baseRssi:      -50 - Math.random() * 40,
+        baseDoa:       Math.random() * 360,
+        doaDrift:      (Math.random() - 0.5) * 0.5,
+        freqMHz:       ch.freq,
+        channel:       ch.channel,
+        protocol:      ch.freq >= 5000 ? 'Wi-Fi (5 GHz)' : 'Wi-Fi (2.4 GHz)',
+        rssiAmplitude: 5 + Math.random() * 10,
+        rssiPhase:     Math.random() * Math.PI * 2,
+        beatFreq:      ch.freq >= 5000 ? 1.2 : 0.6,
+        active:        true,
       };
     });
+
+    const bleSignals = Array.from({ length: bleCount }, (_, i) => {
+      const mac = bufToMac(crypto.randomBytes(6));
+      return {
+        type:          'ble',
+        id:            randomId(),
+        ssid:          BLE_NAME_POOL[i % BLE_NAME_POOL.length],
+        mac,
+        baseRssi:      -55 - Math.random() * 35,
+        baseDoa:       Math.random() * 360,
+        doaDrift:      (Math.random() - 0.5) * 1.0,
+        freqMHz:       BLE_CHANNELS[i % BLE_CHANNELS.length],
+        channel:       `BLE-${37 + (i % 3)}`,
+        protocol:      'Bluetooth LE',
+        rssiAmplitude: 8 + Math.random() * 12,
+        rssiPhase:     Math.random() * Math.PI * 2,
+        beatFreq:      1.0,
+        active:        true,
+      };
+    });
+
+    return [...wifiSignals, ...bleSignals];
   }
 
   _tick() {
@@ -85,20 +120,17 @@ class DemoSDR extends EventEmitter {
       // Transmission activity: random bursts
       const active = Math.random() > 0.15;
 
-      // Beat frequency tied to Wi-Fi channel frequency (normalised)
-      const beatFreq = 0.5 + (sig.freqMHz - 2412) / 3000;
-
       return {
-        id: sig.id,
-        ssid: sig.ssid,
-        mac: sig.mac,
-        rssi: Math.round(rssi * 10) / 10,
-        doa: Math.round(sig.baseDoa * 10) / 10,
-        freqMHz: sig.freqMHz,
-        channel: sig.channel,
-        protocol: sig.protocol,
+        id:        sig.id,
+        ssid:      sig.ssid,
+        mac:       sig.mac,
+        rssi:      Math.round(rssi * 10) / 10,
+        doa:       Math.round(sig.baseDoa * 10) / 10,
+        freqMHz:   sig.freqMHz,
+        channel:   sig.channel,
+        protocol:  sig.protocol,
         active,
-        beatFreq,
+        beatFreq:  sig.beatFreq,
         timestamp: Date.now(),
       };
     });

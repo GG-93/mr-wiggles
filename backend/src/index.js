@@ -7,8 +7,8 @@ const cors = require('cors');
 const path = require('path');
 const WebSocketServer = require('./utils/wsServer');
 const SignalManager = require('./processors/signalManager');
-const DemoSDR = require('./sdr/demoSDR');
-const HardwareSDR = require('./sdr/hardwareSDR');
+const DemoSDR       = require('./sdr/demoSDR');
+const NativeScanner = require('./sdr/nativeScanner');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || 'localhost';
@@ -55,7 +55,7 @@ signalManager.on('update', (payload) => {
 });
 
 // ── SDR backend ──────────────────────────────────────────────────────────────
-const sdr = DEMO_MODE ? new DemoSDR() : new HardwareSDR();
+const sdr = DEMO_MODE ? new DemoSDR() : new NativeScanner();
 
 sdr.on('frame', (frame) => {
   signalManager.process(frame);
@@ -68,7 +68,7 @@ sdr.on('error', (err) => {
 // ── Boot ─────────────────────────────────────────────────────────────────────
 server.listen(PORT, HOST, () => {
   console.log(`Mr. Wiggles backend running at http://${HOST}:${PORT}`);
-  console.log(`Mode: ${DEMO_MODE ? 'DEMO (synthetic data)' : 'HARDWARE (SDR)'}`);
+  console.log(`Mode: ${DEMO_MODE ? 'DEMO (synthetic data)' : 'LIVE (WiFi + BLE + ESP32)'}`);
   console.log(`Frontend: http://${HOST}:${PORT}`);
   sdr.start();
 });

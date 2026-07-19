@@ -1,7 +1,7 @@
 {
   "name": "mr-wiggles-backend",
   "version": "1.0.0",
-  "description": "Mr. Wiggles backend - SDR signal capture and WebSocket streaming",
+  "description": "Mr. Wiggles backend - Wi-Fi, Bluetooth, and BLE signal capture and WebSocket streaming",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
@@ -13,6 +13,10 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "ws": "^8.17.1"
+  },
+  "optionalDependencies": {
+    "@abandonware/noble": "^1.9.2-26",
+    "serialport": "^13.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
