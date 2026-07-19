@@ -11,12 +11,18 @@
  */
 const EventEmitter = require('events');
 const { execFile } = require('child_process');
-const { rssiToStrength } = require('../utils/helpers');
 
 const SCAN_INTERVAL_MS = parseInt(process.env.WIFI_SCAN_INTERVAL_MS || '4000', 10);
 // macOS airport binary path
 const AIRPORT_PATH =
   '/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport';
+
+/**
+ * Matches a single nmcli --terse --escape no line for fields SSID,BSSID,SIGNAL,FREQ.
+ * Format: <ssid>:<xx:xx:xx:xx:xx:xx>:<0-100>:<NNNN MHz>
+ * The BSSID is identified unambiguously as 6 hex-pairs, allowing SSIDs that contain colons.
+ */
+const NMCLI_LINE_RE = /^(.*):([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}):(\d+):(\d+)\s+MHz\s*$/;
 
 class WifiScanner extends EventEmitter {
   constructor() {
@@ -97,9 +103,7 @@ class WifiScanner extends EventEmitter {
 
       // The BSSID field is always "xx:xx:xx:xx:xx:xx" (17 chars).
       // Find it with a regex to avoid SSID-colon ambiguity.
-      const match = line.match(
-        /^(.*):([0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}):(\d+):(\d+)\s+MHz\s*$/
-      );
+      const match = line.match(NMCLI_LINE_RE);
       if (!match) continue;
 
       const ssid    = match[1] || '(hidden)';
@@ -268,17 +272,25 @@ class WifiScanner extends EventEmitter {
     return Math.round(-100 + (quality / 100) * 70);
   }
 
-  /** Map 2.4 GHz / 5 GHz channel number to centre frequency in MHz. */
+  /**
+   * Map 2.4 GHz / 5 GHz channel number to centre frequency in MHz.
+   * Formula per IEEE 802.11-2020 §19.3.15 and §21.3.14:
+   *   2.4 GHz: f = 2407 + ch * 5  (channels 1–14)
+   *   5 GHz:   f = 5000 + ch * 5  (channels 36–177, covering UNII-1 through UNII-4)
+   */
   _channelToFreq(channel) {
-    if (channel >= 1 && channel <= 14)  return 2407 + channel * 5;
+    if (channel >= 1 && channel <= 14)   return 2407 + channel * 5;
     if (channel >= 36 && channel <= 177) return 5000 + channel * 5;
     return 2437; // default: 2.4 GHz ch 6
   }
 
-  /** Map frequency in MHz to channel number. */
+  /**
+   * Map frequency in MHz to channel number.
+   * Covers 2.4 GHz (ch 1–13, 2412–2472 MHz) and 5 GHz (ch 36–165, 5180–5825 MHz).
+   */
   _freqToChannel(freqMHz) {
     if (freqMHz >= 2412 && freqMHz <= 2484) return Math.round((freqMHz - 2407) / 5);
-    if (freqMHz >= 5170 && freqMHz <= 5825) return Math.round((freqMHz - 5000) / 5);
+    if (freqMHz >= 5180 && freqMHz <= 5885) return Math.round((freqMHz - 5000) / 5);
     return 0;
   }
 }

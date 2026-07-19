@@ -50,14 +50,22 @@ class Esp32Scanner extends EventEmitter {
     let SerialPort, ReadlineParser;
     try {
       ({ SerialPort } = require('serialport'));
-      ({ ReadlineParser } = require('@serialport/parser-readline'));
     } catch (_) {
-      // serialport package not installed
       console.warn(
         '[Esp32Scanner] serialport not installed – ESP32 scanning disabled.\n' +
         '             Run: npm install serialport  (inside backend/)'
       );
       this.emit('unavailable', 'serialport not installed');
+      return;
+    }
+    try {
+      ({ ReadlineParser } = require('@serialport/parser-readline'));
+    } catch (_) {
+      console.warn(
+        '[Esp32Scanner] @serialport/parser-readline not found.\n' +
+        '             Reinstall serialport: npm install serialport  (inside backend/)'
+      );
+      this.emit('unavailable', '@serialport/parser-readline not found');
       return;
     }
 

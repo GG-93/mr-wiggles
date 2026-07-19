@@ -34,7 +34,7 @@ class BleScanner extends EventEmitter {
   start() {
     let noble;
     try {
-      noble = require('@abandonware/noble');
+      noble = require('@abandonware/noble'); // eslint-disable-line global-require
     } catch (_) {
       try {
         // Also try the older 'noble' package name for users who installed that
