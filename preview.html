@@ -622,12 +622,15 @@ const DEMO_SIGNALS_INIT = [
   },
 ];
 
-// Derive beatFreq and strength from seed data
+// Derive beatFreq and strength from seed data, and cache base values
 function hydrate(raw) {
   return raw.map((s) => ({
     ...s,
     strength: Math.min(1, Math.max(0, (s.rssi + 100) / 50)),
     beatFreq: s.freqMHz > 3000 ? 1.8 : 0.9,
+    _baseDoa:  s.doa,
+    _baseRssi: s.rssi,
+    _seed:     s.id.charCodeAt(s.id.length - 1),
   }));
 }
 
@@ -635,23 +638,25 @@ let demoSignals = hydrate(JSON.parse(JSON.stringify(DEMO_SIGNALS_INIT)));
 
 // Slowly drift DoA and RSSI so the visualization keeps moving
 let demoTime = 0;
-const LOCATED_AFTER_MS = 8000; // first target auto-located after 8 s
+const LOCATE_TARGET_DELAY_MS = 8000; // selected target auto-located after 8 s
 let locatedFired = false;
+
+// Module-scoped; updated by the app closure via setCurrentTargetId()
+let currentTargetId = null;
+function setCurrentTargetId(id) { currentTargetId = id; }
 
 function tickDemo(dtMs) {
   demoTime += dtMs;
   const t = demoTime / 1000;
 
   for (const sig of demoSignals) {
+    const { _baseDoa, _baseRssi, _seed: seed } = sig;
+
     // Drift DoA slowly
-    const seed = sig.id.charCodeAt(sig.id.length - 1);
-    sig.doa = ((DEMO_SIGNALS_INIT.find((s) => s.id === sig.id).doa
-      + Math.sin(t * 0.3 + seed) * 18)) % 360;
-    if (sig.doa < 0) sig.doa += 360;
+    sig.doa = ((_baseDoa + Math.sin(t * 0.3 + seed) * 18) % 360 + 360) % 360;
 
     // Fluctuate RSSI ±4 dBm
-    const baseRssi = DEMO_SIGNALS_INIT.find((s) => s.id === sig.id).rssi;
-    sig.rssi = baseRssi + Math.sin(t * 0.7 + seed * 0.1) * 4;
+    sig.rssi     = _baseRssi + Math.sin(t * 0.7 + seed * 0.1) * 4;
     sig.strength = Math.min(1, Math.max(0, (sig.rssi + 100) / 50));
 
     // Toggle active state occasionally
@@ -659,10 +664,10 @@ function tickDemo(dtMs) {
   }
 
   // Auto-locate the selected target after a few seconds (demo wow-factor)
-  if (!locatedFired && demoTime >= LOCATED_AFTER_MS) {
+  if (!locatedFired && demoTime >= LOCATE_TARGET_DELAY_MS) {
     locatedFired = true;
-    const first = demoSignals.find((s) => s.id === currentTargetId);
-    if (first) first.located = true;
+    const selectedSignal = demoSignals.find((s) => s.id === currentTargetId);
+    if (selectedSignal) selectedSignal.located = true;
   }
 }
 
@@ -687,7 +692,7 @@ function tickDemo(dtMs) {
   const infoStatus   = document.getElementById('js-info-status');
 
   // ── State ───────────────────────────────────────────────────────────────
-  window.currentTargetId = null;  // shared with demo ticker
+  // currentTargetId is module-scoped in the demo ticker; update via setCurrentTargetId()
 
   // ── Renderer ─────────────────────────────────────────────────────────────
   const renderer = new Renderer(canvas);
@@ -701,8 +706,8 @@ function tickDemo(dtMs) {
   // Auto-select first signal for instant visual impact
   if (demoSignals.length > 0) {
     targetSelect.value = demoSignals[0].id;
-    window.currentTargetId = demoSignals[0].id;
-    renderer.setTarget(window.currentTargetId);
+    setCurrentTargetId(demoSignals[0].id);
+    renderer.setTarget(demoSignals[0].id);
     updateInfoPanel();
   }
 
@@ -723,9 +728,11 @@ function tickDemo(dtMs) {
 
   // ── Signal selection ──────────────────────────────────────────────────────
   targetSelect.addEventListener('change', () => {
-    window.currentTargetId = targetSelect.value || null;
-    renderer.setTarget(window.currentTargetId);
-    // Reset located state when user picks a new target
+    const id = targetSelect.value || null;
+    setCurrentTargetId(id);
+    renderer.setTarget(id);
+    // Reset demo ticker so auto-location restarts for the new target
+    demoTime = 0;
     locatedFired = false;
     demoSignals.forEach((s) => { s.located = false; });
     updateInfoPanel();
