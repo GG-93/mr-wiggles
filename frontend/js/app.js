@@ -13,6 +13,7 @@
   const targetSelect  = document.getElementById('js-target-select');
   const signalList    = document.getElementById('js-signal-list');
   const locatedBanner = document.getElementById('js-located-banner');
+  const menuBtn       = document.getElementById('js-menu-btn');
 
   const infoSsid     = document.getElementById('js-info-ssid');
   const infoMac      = document.getElementById('js-info-mac');
@@ -27,13 +28,45 @@
   let signals   = [];
   let targetId  = null;
 
+  // ── Mobile sidebar drawer ─────────────────────────────────────────────
+  const sidebar = document.querySelector('.sidebar');
+
+  // Insert a dim overlay behind the drawer (mobile only)
+  const overlay = document.createElement('div');
+  overlay.className = 'sidebar-overlay';
+  document.body.appendChild(overlay);
+
+  function openSidebar() {
+    sidebar.classList.add('sidebar--open');
+    overlay.classList.add('sidebar-overlay--visible');
+    menuBtn.classList.add('menu-btn--open');
+    menuBtn.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('sidebar--open');
+    overlay.classList.remove('sidebar-overlay--visible');
+    menuBtn.classList.remove('menu-btn--open');
+    menuBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  if (menuBtn) {
+    menuBtn.addEventListener('click', () => {
+      sidebar.classList.contains('sidebar--open') ? closeSidebar() : openSidebar();
+    });
+  }
+
+  overlay.addEventListener('click', closeSidebar);
+
   // ── Renderer ──────────────────────────────────────────────────────────
   const renderer = new Renderer(canvas);
   renderer.start();
 
   // ── WebSocket ─────────────────────────────────────────────────────────
-  const wsUrl = `ws://${location.host}/ws`;
-  const ws = new WsClient(wsUrl);
+  // Use wss:// when the page is served over HTTPS, ws:// otherwise.
+  const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl   = `${wsProto}://${location.host}/ws`;
+  const ws      = new WsClient(wsUrl);
 
   ws.addEventListener('open', () => {
     setStatus('connected', 'Connected');
@@ -151,6 +184,7 @@
         item.addEventListener('click', () => {
           targetSelect.value = sig.id;
           targetSelect.dispatchEvent(new Event('change'));
+          closeSidebar();
         });
         signalList.appendChild(item);
       }

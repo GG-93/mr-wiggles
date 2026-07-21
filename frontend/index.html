@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mr. Wiggles 🌀 – Signal Fox Hunter</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#00e5ff" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Mr. Wiggles" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -14,6 +24,11 @@
       <span id="js-status-dot" class="status-dot status-dot--disconnected"></span>
       <span id="js-status-text">Connecting…</span>
     </div>
+    <button id="js-menu-btn" class="menu-btn" aria-label="Toggle signal panel" aria-expanded="false">
+      <span class="menu-btn__bar"></span>
+      <span class="menu-btn__bar"></span>
+      <span class="menu-btn__bar"></span>
+    </button>
   </header>
 
   <!-- ── Main layout ────────────────────────────────────── -->
@@ -74,5 +89,14 @@
   <script src="js/wsClient.js"></script>
   <script src="js/renderer.js"></script>
   <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('[SW] Registration failed:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
