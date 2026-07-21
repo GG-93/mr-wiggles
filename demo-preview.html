@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<!--
+  Mr. Wiggles – Standalone Visual Demo
+  =====================================
+  Open this file directly in any browser (no server needed).
+  All CSS, rendering engine, and synthetic signal data are self-contained.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mr. Wiggles 🌀 – Visual Demo (Standalone)</title>
+  <style>
+    /* ── Reset ────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Variables ────────────────────────────────────────────────────── */
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --surface2: #1a1a1a;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --text-muted: #888;
+      --accent: #00e5ff;
+      --accent2: #ff4081;
+      --located: #76ff03;
+      --panel-w: 280px;
+      --header-h: 52px;
+      --font: 'Courier New', Courier, monospace;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      overflow: hidden;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────── */
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 100;
+    }
+    .header__logo { font-size: 18px; font-weight: bold; letter-spacing: 2px; color: var(--accent); }
+    .header__status { display: flex; align-items: center; gap: 8px; color: var(--text-muted); flex: 1; justify-content: flex-end; margin-right: 12px; }
+    .header__badge { font-size: 11px; background: #1a3a1a; color: var(--located); border: 1px solid #3a6a3a; padding: 2px 8px; border-radius: 10px; letter-spacing: 1px; }
+
+    /* ── Status dot ───────────────────────────────────────────────────── */
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-dot--disconnected { background: #f44336; }
+    .status-dot--connecting   { background: #ff9800; animation: blink 1s infinite; }
+    .status-dot--connected    { background: #4caf50; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ── Hamburger (mobile) ───────────────────────────────────────────── */
+    .menu-btn { display: none; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 40px; height: 40px; background: transparent; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; flex-shrink: 0; padding: 0; }
+    .menu-btn__bar { display: block; width: 20px; height: 2px; background: var(--accent); border-radius: 1px; transition: transform 0.2s, opacity 0.2s; }
+    .menu-btn--open .menu-btn__bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .menu-btn--open .menu-btn__bar:nth-child(2) { opacity: 0; }
+    .menu-btn--open .menu-btn__bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── Layout ───────────────────────────────────────────────────────── */
+    .layout { display: flex; height: 100vh; padding-top: var(--header-h); }
+
+    /* ── Canvas ───────────────────────────────────────────────────────── */
+    .canvas-wrapper { flex: 1; position: relative; overflow: hidden; background: #000; }
+    #js-canvas { display: block; width: 100%; height: 100%; }
+
+    /* ── Located banner ───────────────────────────────────────────────── */
+    .located-banner { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--located); color: #000; font-weight: bold; font-size: 16px; padding: 10px 28px; border-radius: 4px; letter-spacing: 2px; animation: pulse-banner 0.8s ease-in-out infinite alternate; white-space: nowrap; }
+    @keyframes pulse-banner { from { box-shadow: 0 0 10px var(--located); } to { box-shadow: 0 0 30px var(--located), 0 0 60px var(--located); } }
+    .hidden { display: none !important; }
+
+    /* ── Sidebar ──────────────────────────────────────────────────────── */
+    .sidebar { width: var(--panel-w); background: var(--surface); border-left: 1px solid var(--border); overflow-y: auto; flex-shrink: 0; }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── Panel ────────────────────────────────────────────────────────── */
+    .panel { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .panel__title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); margin-bottom: 10px; }
+
+    /* ── Signal select ────────────────────────────────────────────────── */
+    .signal-select { width: 100%; background: var(--surface2); color: var(--text); border: 1px solid var(--border); padding: 8px; font-family: var(--font); font-size: 12px; cursor: pointer; border-radius: 2px; }
+    .signal-select:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Info table ───────────────────────────────────────────────────── */
+    .info-table { width: 100%; border-collapse: collapse; }
+    .info-table th { text-align: left; color: var(--text-muted); font-weight: normal; padding: 3px 0; white-space: nowrap; width: 72px; }
+    .info-table td { color: var(--text); padding: 3px 0; word-break: break-all; }
+
+    /* ── Signal list ──────────────────────────────────────────────────── */
+    .signal-list { list-style: none; }
+    .signal-list__item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+    .signal-list__item:hover { background: var(--surface2); padding-left: 4px; }
+    .signal-list__item--target { color: var(--accent); }
+    .signal-list__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .signal-list__name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .signal-list__rssi { color: var(--text-muted); font-size: 11px; }
+
+    /* ── Legend ───────────────────────────────────────────────────────── */
+    .legend { list-style: none; }
+    .legend li { display: flex; align-items: center; gap: 8px; padding: 4px 0; color: var(--text-muted); font-size: 11px; }
+    .legend__swatch { width: 28px; height: 4px; flex-shrink: 0; border-radius: 2px; }
+    .legend__swatch--ring    { background: #fff; }
+    .legend__swatch--beat    { background: var(--accent); }
+    .legend__swatch--thick   { background: #fff; height: 8px; }
+    .legend__swatch--located { background: var(--located); }
+
+    /* ── Mobile ───────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .menu-btn { display: flex; }
+      @media (max-width: 420px) { #js-status-text { display: none; } .header__status { margin-right: 8px; } }
+      .layout { display: block; height: 100vh; overflow: hidden; }
+      .canvas-wrapper { position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; }
+      .sidebar { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 70vh; max-height: calc(100vh - var(--header-h) - 40px); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-left: none; border-top: 2px solid var(--accent); border-radius: 12px 12px 0 0; z-index: 50; overflow-y: auto; padding-top: 16px; }
+      .sidebar::before { content: ''; display: block; width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 12px; }
+      .sidebar--open { transform: translateY(0); }
+      .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 40; }
+      .sidebar-overlay--visible { display: block; }
+      .signal-list__item { padding: 10px 0; font-size: 14px; }
+      .signal-list__dot { width: 10px; height: 10px; }
+      .signal-select { padding: 12px 8px; font-size: 14px; }
+      .info-table th, .info-table td { padding: 5px 0; font-size: 13px; }
+      .panel { padding: 16px; }
+      .located-banner { bottom: 40px; font-size: 14px; padding: 8px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header__logo">🌀 Mr. Wiggles</div>
+    <div class="header__status">
+      <span class="header__badge">DEMO PREVIEW</span>
+      <span id="js-status-dot" class="status-dot status-dot--connected"></span>
+      <span id="js-status-text">Demo Mode</span>
+    </div>
+    <button id="js-menu-btn" class="menu-btn" aria-label="Toggle signal panel" aria-expanded="false">
+      <span class="menu-btn__bar"></span>
+      <span class="menu-btn__bar"></span>
+      <span class="menu-btn__bar"></span>
+    </button>
+  </header>
+
+  <!-- ── Main layout ─────────────────────────────────────────────────── -->
+  <main class="layout">
+    <section class="canvas-wrapper">
+      <canvas id="js-canvas"></canvas>
+      <div id="js-located-banner" class="located-banner hidden">📍 Signal Located!</div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <h2 class="panel__title">Hunt Target</h2>
+        <select id="js-target-select" class="signal-select">
+          <option value="">— select signal —</option>
+        </select>
+      </div>
+
+      <div class="panel" id="js-signal-panel">
+        <h2 class="panel__title">Signal Info</h2>
+        <table class="info-table">
+          <tbody>
+            <tr><th>SSID</th><td id="js-info-ssid">—</td></tr>
+            <tr><th>MAC</th><td id="js-info-mac">—</td></tr>
+            <tr><th>RSSI</th><td id="js-info-rssi">—</td></tr>
+            <tr><th>DoA</th><td id="js-info-doa">—</td></tr>
+            <tr><th>Freq</th><td id="js-info-freq">—</td></tr>
+            <tr><th>Channel</th><td id="js-info-channel">—</td></tr>
+            <tr><th>Protocol</th><td id="js-info-protocol">—</td></tr>
+            <tr><th>Status</th><td id="js-info-status">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel__title">Detected Signals</h2>
+        <ul id="js-signal-list" class="signal-list"></ul>
+      </div>
+
+      <div class="panel panel--legend">
+        <h2 class="panel__title">Legend</h2>
+        <ul class="legend">
+          <li><span class="legend__swatch legend__swatch--ring"></span>Crescent = DoA direction</li>
+          <li><span class="legend__swatch legend__swatch--beat"></span>Beat waves = frequency</li>
+          <li><span class="legend__swatch legend__swatch--thick"></span>Thickness = RSSI strength</li>
+          <li><span class="legend__swatch legend__swatch--located"></span>Hard circle = located</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+  'use strict';
+
+  /* ══════════════════════════════════════════════════════════════════════
+     RENDERER  (identical to renderer.js)
+     ══════════════════════════════════════════════════════════════════════ */
+  class Renderer {
+    constructor(canvas) {
+      this._canvas = canvas;
+      this._ctx = canvas.getContext('2d');
+      this._signals = [];
+      this._targetId = null;
+      this._time = 0;
+      this._lastTs = null;
+      this._rafId = null;
+      this._rings = new Map();
+      this._resize();
+      window.addEventListener('resize', () => this._resize());
+    }
+
+    setSignals(signals) { this._signals = signals; }
+    setTarget(id)       { this._targetId = id; }
+
+    start() {
+      if (this._rafId) return;
+      this._lastTs = performance.now();
+      this._loop(this._lastTs);
+    }
+
+    stop() {
+      if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+    }
+
+    _resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = this._canvas.clientWidth;
+      const h = this._canvas.clientHeight;
+      this._canvas.width  = w * dpr;
+      this._canvas.height = h * dpr;
+      this._ctx.scale(dpr, dpr);
+      this._w = w; this._h = h;
+      this._cx = w / 2; this._cy = h / 2;
+      this._maxR = Math.min(w, h) * 0.45;
+    }
+
+    _loop(ts) {
+      this._rafId = requestAnimationFrame((t) => this._loop(t));
+      const dt = (ts - (this._lastTs || ts)) / 1000;
+      this._lastTs = ts;
+      this._time += dt;
+      this._update(dt);
+      this._draw();
+    }
+
+    _update(dt) {
+      for (const sig of this._signals) {
+        if (!this._rings.has(sig.id)) this._rings.set(sig.id, []);
+        const rings = this._rings.get(sig.id);
+        const beatFreqSafe = sig.beatFreq > 0 ? sig.beatFreq : 0.5;
+        const spawnInterval = 0.4 / beatFreqSafe;
+        if (!sig._nextSpawn || this._time >= sig._nextSpawn) {
+          sig._nextSpawn = this._time + spawnInterval;
+          rings.push({
+            radius: 0, alpha: 0.9,
+            doa: sig.doa, rssi: sig.rssi,
+            strength: sig.strength || 0.5,
+            active: sig.active,
+            beatFreq: sig.beatFreq || 0.5,
+            beatPhase: Math.random() * Math.PI * 2,
+            born: this._time,
+          });
+        }
+        for (let i = rings.length - 1; i >= 0; i--) {
+          const r = rings[i];
+          const speed = this._maxR * (0.25 + (sig.beatFreq || 0.5) * 0.35);
+          r.radius += speed * dt;
+          r.alpha = Math.max(0, 0.9 - (r.radius / this._maxR) * 0.9);
+          if (r.radius > this._maxR * 1.1) rings.splice(i, 1);
+        }
+      }
+      for (const id of this._rings.keys()) {
+        if (!this._signals.find((s) => s.id === id)) this._rings.delete(id);
+      }
+    }
+
+    _draw() {
+      const ctx = this._ctx;
+      const { _w: w, _h: h, _cx: cx, _cy: cy } = this;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, w, h);
+      this._drawGrid(ctx, cx, cy, w, h);
+      const targetSig = this._signals.find((s) => s.id === this._targetId);
+      for (const sig of this._signals) {
+        if (sig.id === this._targetId) continue;
+        this._drawSignal(ctx, sig, false);
+      }
+      if (targetSig) this._drawSignal(ctx, targetSig, true);
+      this._drawCenter(ctx, cx, cy);
+    }
+
+    _drawGrid(ctx, cx, cy, w, h) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      const step = this._maxR / 5;
+      for (let r = step; r <= this._maxR; r += step) {
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(cx - this._maxR, cy); ctx.lineTo(cx + this._maxR, cy);
+      ctx.moveTo(cx, cy - this._maxR); ctx.lineTo(cx, cy + this._maxR);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.15)';
+      ctx.font = '10px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('N', cx, cy - this._maxR - 6);
+      ctx.fillText('S', cx, cy + this._maxR + 14);
+      ctx.textAlign = 'left';
+      ctx.fillText('E', cx + this._maxR + 6, cy + 4);
+      ctx.fillText('W', cx - this._maxR - 20, cy + 4);
+      ctx.restore();
+    }
+
+    _drawCenter(ctx, cx, cy) {
+      ctx.save();
+      const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, 16);
+      grd.addColorStop(0, 'rgba(0,229,255,0.4)');
+      grd.addColorStop(1, 'rgba(0,229,255,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#00e5ff';
+      ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,229,255,0.7)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+
+    _drawSignal(ctx, sig, isTarget) {
+      const rings = this._rings.get(sig.id) || [];
+      const dimFactor = isTarget ? 1.0 : 0.45;
+      for (const ring of rings) this._drawCrescentRipple(ctx, ring, sig, isTarget, dimFactor);
+      if (sig.located) this._drawLocatedCircle(ctx, sig, dimFactor);
+    }
+
+    _drawCrescentRipple(ctx, ring, sig, isTarget, dimFactor) {
+      const { _cx: cx, _cy: cy } = this;
+      const { radius, alpha, doa, strength, active, beatFreq, beatPhase, born } = ring;
+      if (radius < 1) return;
+      const doaRad = (doa - 90) * (Math.PI / 180);
+      const halfSpan = (Math.PI / 6) + strength * (Math.PI / 4);
+      const startAngle = doaRad - halfSpan;
+      const endAngle   = doaRad + halfSpan;
+      const lineWidth  = isTarget ? 1 + strength * 4 : 0.5 + strength * 2;
+      const hue = isTarget ? '0,229,255' : '255,255,255';
+      ctx.save();
+      const layers = 3;
+      for (let l = 0; l < layers; l++) {
+        const r = radius - l * 8;
+        if (r < 1) continue;
+        const layerAlpha = alpha * (1 - l * 0.25) * dimFactor;
+        if (layerAlpha <= 0) continue;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, startAngle, endAngle);
+        ctx.strokeStyle = `rgba(${hue},${layerAlpha.toFixed(3)})`;
+        ctx.lineWidth = lineWidth * (1 - l * 0.2);
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        if (active) {
+          this._drawBeatWaves(ctx, cx, cy, r, startAngle, endAngle,
+            hue, layerAlpha, beatFreq, beatPhase, born, lineWidth);
+        }
+      }
+      ctx.restore();
+    }
+
+    _drawBeatWaves(ctx, cx, cy, radius, startAngle, endAngle,
+                   hue, alpha, beatFreq, beatPhase, born, baseLineWidth) {
+      const steps = 60;
+      const span  = endAngle - startAngle;
+      const beatT = this._time * beatFreq * Math.PI * 2 + beatPhase;
+      const waveAmp = 4 + baseLineWidth * 0.5;
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(${hue},${(alpha * 0.6).toFixed(3)})`;
+      ctx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const angle = startAngle + t * span;
+        const wave  = Math.sin(t * Math.PI * 6 + beatT) * waveAmp;
+        const r = radius + wave;
+        const x = cx + Math.cos(angle) * r;
+        const y = cy + Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    _drawLocatedCircle(ctx, sig, dimFactor) {
+      const { _cx: cx, _cy: cy } = this;
+      const r = 30 + (sig.strength || 0) * 40;
+      const pulse = 0.7 + 0.3 * Math.sin(this._time * 4);
+      const doaRad = (sig.doa - 90) * (Math.PI / 180);
+      const dist = this._maxR * 0.35;
+      const gx = cx + Math.cos(doaRad) * dist;
+      const gy = cy + Math.sin(doaRad) * dist;
+      ctx.save();
+      const grd = ctx.createRadialGradient(gx, gy, 0, gx, gy, r * 1.5);
+      grd.addColorStop(0, `rgba(118,255,3,${(0.3 * pulse * dimFactor).toFixed(3)})`);
+      grd.addColorStop(1, 'rgba(118,255,3,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(gx, gy, r * 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `rgba(118,255,3,${(pulse * dimFactor).toFixed(3)})`;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(gx, gy, r, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = `rgba(118,255,3,${(0.8 * pulse * dimFactor).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(gx, gy, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     DEMO DATA GENERATOR  (replaces the backend WebSocket feed)
+     ══════════════════════════════════════════════════════════════════════ */
+  const DEMO_SIGNALS_TEMPLATE = [
+    { id: 'sig-1', ssid: 'HomeNetwork_5G',  mac: 'AA:BB:CC:11:22:33', freqMHz: 5180, channel: 36,  protocol: 'WiFi',  doa:  35, rssi: -58, beatFreq: 1.2 },
+    { id: 'sig-2', ssid: 'NETGEAR42',       mac: 'DD:EE:FF:44:55:66', freqMHz: 2437, channel:  6,  protocol: 'WiFi',  doa: 130, rssi: -72, beatFreq: 0.8 },
+    { id: 'sig-3', ssid: 'BLE-Beacon-03',   mac: '11:22:33:44:55:66', freqMHz: 2402, channel:  37, protocol: 'BLE',   doa: 240, rssi: -65, beatFreq: 1.6 },
+    { id: 'sig-4', ssid: 'Xfinity-Guest',   mac: '77:88:99:AA:BB:CC', freqMHz: 2412, channel:  1,  protocol: 'WiFi',  doa: 310, rssi: -80, beatFreq: 0.5 },
+    { id: 'sig-5', ssid: 'ESP32-Bridge',    mac: 'E8:DB:84:11:22:33', freqMHz: 2462, channel:  11, protocol: 'ESP32', doa: 185, rssi: -55, beatFreq: 2.0 },
+  ];
+
+  // Runtime state — signals drift slowly to look alive
+  const liveSignals = DEMO_SIGNALS_TEMPLATE.map((t) => ({
+    ...t,
+    _doaVel:  (Math.random() - 0.5) * 8,
+    _rssiVel: (Math.random() - 0.5) * 4,
+    strength: 0,
+    active: true,
+    located: false,
+  }));
+
+  function rssiToStrength(rssi) {
+    // -40 dBm → 1.0,  -90 dBm → 0.0
+    return Math.max(0, Math.min(1, (rssi + 90) / 50));
+  }
+
+  function tickDemo() {
+    for (const sig of liveSignals) {
+      // Gentle random walk for DoA and RSSI
+      sig._doaVel  += (Math.random() - 0.5) * 2;
+      sig._doaVel   = Math.max(-12, Math.min(12, sig._doaVel));
+      sig.doa       = (sig.doa + sig._doaVel * 0.016 + 360) % 360;
+
+      sig._rssiVel += (Math.random() - 0.5) * 1;
+      sig._rssiVel  = Math.max(-5, Math.min(5, sig._rssiVel));
+      sig.rssi      = Math.max(-90, Math.min(-40, sig.rssi + sig._rssiVel * 0.016));
+      sig.strength  = rssiToStrength(sig.rssi);
+
+      // "Located" when RSSI crosses -60 dBm threshold
+      sig.located = sig.rssi >= -60;
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     APP CONTROLLER
+     ══════════════════════════════════════════════════════════════════════ */
+  (function () {
+    const canvas        = document.getElementById('js-canvas');
+    const targetSelect  = document.getElementById('js-target-select');
+    const signalList    = document.getElementById('js-signal-list');
+    const locatedBanner = document.getElementById('js-located-banner');
+    const menuBtn       = document.getElementById('js-menu-btn');
+
+    const infoSsid     = document.getElementById('js-info-ssid');
+    const infoMac      = document.getElementById('js-info-mac');
+    const infoRssi     = document.getElementById('js-info-rssi');
+    const infoDoa      = document.getElementById('js-info-doa');
+    const infoFreq     = document.getElementById('js-info-freq');
+    const infoChannel  = document.getElementById('js-info-channel');
+    const infoProtocol = document.getElementById('js-info-protocol');
+    const infoStatus   = document.getElementById('js-info-status');
+
+    let targetId = null;
+
+    // ── Mobile sidebar ──────────────────────────────────────────────────
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+
+    function openSidebar()  { sidebar.classList.add('sidebar--open'); overlay.classList.add('sidebar-overlay--visible'); menuBtn.classList.add('menu-btn--open'); menuBtn.setAttribute('aria-expanded', 'true'); }
+    function closeSidebar() { sidebar.classList.remove('sidebar--open'); overlay.classList.remove('sidebar-overlay--visible'); menuBtn.classList.remove('menu-btn--open'); menuBtn.setAttribute('aria-expanded', 'false'); }
+
+    menuBtn.addEventListener('click', () => sidebar.classList.contains('sidebar--open') ? closeSidebar() : openSidebar());
+    overlay.addEventListener('click', closeSidebar);
+
+    // ── Renderer ────────────────────────────────────────────────────────
+    const renderer = new Renderer(canvas);
+    renderer.start();
+
+    // ── Target selection ────────────────────────────────────────────────
+    targetSelect.addEventListener('change', () => {
+      targetId = targetSelect.value || null;
+      renderer.setTarget(targetId);
+      updateInfoPanel();
+    });
+
+    // Pre-populate the dropdown
+    for (const sig of liveSignals) {
+      const opt = document.createElement('option');
+      opt.value = sig.id;
+      opt.textContent = `${sig.ssid} (${sig.mac})`;
+      targetSelect.appendChild(opt);
+    }
+
+    // Auto-select the first signal so the canvas is immediately interesting
+    targetId = liveSignals[0].id;
+    targetSelect.value = targetId;
+    renderer.setTarget(targetId);
+
+    // ── Demo update loop (16 ms ≈ 60 Hz) ───────────────────────────────
+    function update() {
+      tickDemo();
+      renderer.setSignals(liveSignals);
+      updateSignalList();
+      updateInfoPanel();
+      updateLocatedBanner();
+    }
+
+    setInterval(update, 16);
+    update(); // immediate first frame
+
+    // ── UI helpers ──────────────────────────────────────────────────────
+    function updateSignalList() {
+      const existing = new Map(
+        Array.from(signalList.querySelectorAll('li[data-id]')).map((el) => [el.dataset.id, el])
+      );
+      for (const sig of liveSignals) {
+        let item = existing.get(sig.id);
+        if (!item) {
+          item = document.createElement('li');
+          item.className = 'signal-list__item';
+          item.dataset.id = sig.id;
+          item.innerHTML = `<span class="signal-list__dot"></span><span class="signal-list__name"></span><span class="signal-list__rssi"></span>`;
+          item.addEventListener('click', () => {
+            targetSelect.value = sig.id;
+            targetSelect.dispatchEvent(new Event('change'));
+            closeSidebar();
+          });
+          signalList.appendChild(item);
+        }
+        item.querySelector('.signal-list__dot').style.background = strengthToColor(sig.strength);
+        item.querySelector('.signal-list__name').textContent = sig.ssid;
+        item.querySelector('.signal-list__rssi').textContent = `${sig.rssi.toFixed(1)} dBm`;
+        item.classList.toggle('signal-list__item--target', sig.id === targetId);
+      }
+    }
+
+    function updateInfoPanel() {
+      const sig = liveSignals.find((s) => s.id === targetId);
+      if (!sig) { [infoSsid, infoMac, infoRssi, infoDoa, infoFreq, infoChannel, infoProtocol, infoStatus].forEach((el) => { el.textContent = '—'; }); return; }
+      infoSsid.textContent     = sig.ssid;
+      infoMac.textContent      = sig.mac;
+      infoRssi.textContent     = `${sig.rssi.toFixed(1)} dBm`;
+      infoDoa.textContent      = `${sig.doa.toFixed(1)}°`;
+      infoFreq.textContent     = `${sig.freqMHz} MHz`;
+      infoChannel.textContent  = sig.channel;
+      infoProtocol.textContent = sig.protocol;
+      infoStatus.textContent   = sig.located ? '📍 Located' : sig.active ? '📡 Active' : '💤 Idle';
+      infoStatus.style.color   = sig.located ? '#76ff03' : sig.active ? '#00e5ff' : '#888';
+    }
+
+    function updateLocatedBanner() {
+      const located = liveSignals.some((s) => s.id === targetId && s.located);
+      locatedBanner.classList.toggle('hidden', !located);
+    }
+
+    function strengthToColor(s) {
+      if (s < 0.3) return '#2196f3';
+      if (s < 0.6) return '#00e5ff';
+      if (s < 0.8) return '#76ff03';
+      return '#ff4081';
+    }
+  })();
+  </script>
+</body>
+</html>
