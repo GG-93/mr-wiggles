@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mr. Wiggles 🌀 – Signal Fox Hunter</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- ── Header ─────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header__logo">🌀 Mr. Wiggles</div>
+    <div class="header__status">
+      <span id="js-status-dot" class="status-dot status-dot--disconnected"></span>
+      <span id="js-status-text">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- ── Main layout ────────────────────────────────────── -->
+  <main class="layout">
+    <!-- Canvas -->
+    <section class="canvas-wrapper">
+      <canvas id="js-canvas"></canvas>
+      <div id="js-located-banner" class="located-banner hidden">📍 Signal Located!</div>
+    </section>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <!-- Signal selector -->
+      <div class="panel">
+        <h2 class="panel__title">Hunt Target</h2>
+        <select id="js-target-select" class="signal-select">
+          <option value="">— select signal —</option>
+        </select>
+      </div>
+
+      <!-- Active signal info -->
+      <div class="panel" id="js-signal-panel">
+        <h2 class="panel__title">Signal Info</h2>
+        <table class="info-table">
+          <tbody>
+            <tr><th>SSID</th><td id="js-info-ssid">—</td></tr>
+            <tr><th>MAC</th><td id="js-info-mac">—</td></tr>
+            <tr><th>RSSI</th><td id="js-info-rssi">—</td></tr>
+            <tr><th>DoA</th><td id="js-info-doa">—</td></tr>
+            <tr><th>Freq</th><td id="js-info-freq">—</td></tr>
+            <tr><th>Channel</th><td id="js-info-channel">—</td></tr>
+            <tr><th>Protocol</th><td id="js-info-protocol">—</td></tr>
+            <tr><th>Status</th><td id="js-info-status">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- All detected signals -->
+      <div class="panel">
+        <h2 class="panel__title">Detected Signals</h2>
+        <ul id="js-signal-list" class="signal-list"></ul>
+      </div>
+
+      <!-- Legend -->
+      <div class="panel panel--legend">
+        <h2 class="panel__title">Legend</h2>
+        <ul class="legend">
+          <li><span class="legend__swatch legend__swatch--ring"></span>Crescent = DoA direction</li>
+          <li><span class="legend__swatch legend__swatch--beat"></span>Beat waves = frequency</li>
+          <li><span class="legend__swatch legend__swatch--thick"></span>Thickness = RSSI strength</li>
+          <li><span class="legend__swatch legend__swatch--located"></span>Hard circle = located</li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ── Scripts ────────────────────────────────────────── -->
+  <script src="js/wsClient.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

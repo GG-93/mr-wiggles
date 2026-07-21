@@ -1,0 +1,26 @@
+{
+  "name": "mr-wiggles",
+  "version": "1.0.0",
+  "description": "Real-time wireless signal fox hunting sonar visualizer",
+  "private": true,
+  "scripts": {
+    "start": "npm run start --workspace=backend",
+    "dev": "npm run dev --workspace=backend",
+    "install:all": "npm install --workspaces",
+    "test": "npm run test --workspace=backend"
+  },
+  "workspaces": [
+    "backend"
+  ],
+  "keywords": [
+    "sdr",
+    "wifi",
+    "signal",
+    "visualization",
+    "fox-hunting",
+    "hackrf",
+    "rtl-sdr"
+  ],
+  "author": "",
+  "license": "MIT"
+}
