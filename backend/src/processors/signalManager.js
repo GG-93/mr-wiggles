@@ -39,7 +39,9 @@ class SignalManager extends EventEmitter {
           ssid: f.ssid,
           mac: f.mac,
           rssi: f.rssi,
-          doa: f.doa,
+          doa: this._readDoa(f),
+          bearingAvailable: this._bearingAvailable(f),
+          bearingMethod: f.bearingMethod || 'unavailable',
           freqMHz: f.freqMHz,
           channel: f.channel,
           protocol: f.protocol,
@@ -55,7 +57,18 @@ class SignalManager extends EventEmitter {
       } else {
         // Smooth RSSI and DoA
         rec.rssi = ema(rec.rssi, f.rssi, RSSI_ALPHA);
-        rec.doa = normaliseDeg(ema(rec.doa, f.doa, DOA_ALPHA));
+        rec.bearingAvailable = this._bearingAvailable(f);
+        rec.bearingMethod = f.bearingMethod || (rec.bearingAvailable ? 'provided' : 'unavailable');
+        if (rec.bearingAvailable) {
+          const nextDoa = this._readDoa(f);
+          if (typeof nextDoa === 'number') {
+            rec.doa = typeof rec.doa === 'number'
+              ? normaliseDeg(ema(rec.doa, nextDoa, DOA_ALPHA))
+              : normaliseDeg(nextDoa);
+          }
+        } else {
+          rec.doa = null;
+        }
         rec.active = f.active;
         rec.beatFreq = f.beatFreq;
         rec.strength = rssiToStrength(rec.rssi);
@@ -107,6 +120,15 @@ class SignalManager extends EventEmitter {
       if (rec.lastSeen < cutoff) {
         console.log(`[SignalManager] Pruning stale signal: ${rec.ssid}`);
         this._signals.delete(id);
+      }
+
+      _bearingAvailable(frame) {
+        if (typeof frame.bearingAvailable === 'boolean') return frame.bearingAvailable;
+        return typeof frame.doa === 'number';
+      }
+
+      _readDoa(frame) {
+        return typeof frame.doa === 'number' ? normaliseDeg(frame.doa) : null;
       }
     }
   }

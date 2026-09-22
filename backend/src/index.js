@@ -43,6 +43,29 @@ app.post('/api/target', (req, res) => {
   res.json({ ok: true, target: id });
 });
 
+app.get('/api/scanner-config', (_req, res) => {
+  if (DEMO_MODE || typeof sdr.getScannerConfig !== 'function') {
+    return res.json({
+      wifiMonitor: {
+        enabled: false,
+        canEnable: false,
+        reason: DEMO_MODE ? 'demo mode has no monitor mode' : 'not supported',
+      },
+    });
+  }
+  return res.json(sdr.getScannerConfig());
+});
+
+app.post('/api/scanner-config/wifi-monitor', (req, res) => {
+  const enabled = Boolean(req.body && req.body.enabled);
+  if (DEMO_MODE || typeof sdr.setWifiMonitorMode !== 'function') {
+    return res.status(400).json({ ok: false, reason: 'not supported in demo mode' });
+  }
+  const result = sdr.setWifiMonitorMode(enabled);
+  if (!result.ok) return res.status(400).json(result);
+  return res.json(result);
+});
+
 // ── HTTP + WebSocket server ──────────────────────────────────────────────────
 const server = http.createServer(app);
 const wss = new WebSocketServer(server);

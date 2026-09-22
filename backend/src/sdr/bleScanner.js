@@ -110,8 +110,9 @@ class BleScanner extends EventEmitter {
       ssid:      name,
       mac:       addr,
       rssi,
-      // Single-antenna BLE: DoA unavailable
-      doa:       0,
+      doa:       null,
+      bearingAvailable: false,
+      bearingMethod: 'unavailable',
       freqMHz,
       channel,
       protocol,

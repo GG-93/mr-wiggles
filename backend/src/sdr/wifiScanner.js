@@ -30,6 +30,8 @@ class WifiScanner extends EventEmitter {
     this._timer = null;
     this._platform = process.platform;
     this._available = true;
+    this._monitorMode = false;
+    this._wifiInterface = process.env.WIFI_INTERFACE || '';
   }
 
   start() {
@@ -45,6 +47,34 @@ class WifiScanner extends EventEmitter {
       this._timer = null;
     }
     console.log('[WifiScanner] Stopped');
+  }
+
+  getMonitorStatus() {
+    const isLinux = this._platform === 'linux';
+    const isRoot = typeof process.geteuid === 'function' ? process.geteuid() === 0 : false;
+    const hasInterface = Boolean(this._wifiInterface);
+    const canEnable = isLinux && isRoot && hasInterface;
+
+    let reason = '';
+    if (!isLinux) reason = 'monitor mode requires Linux';
+    else if (!isRoot) reason = 'monitor mode requires root privileges';
+    else if (!hasInterface) reason = 'set WIFI_INTERFACE to enable monitor mode';
+
+    return {
+      enabled: this._monitorMode,
+      canEnable,
+      interface: this._wifiInterface || null,
+      reason,
+    };
+  }
+
+  setMonitorMode(enabled) {
+    const status = this.getMonitorStatus();
+    if (enabled && !status.canEnable) {
+      return { ok: false, ...status };
+    }
+    this._monitorMode = Boolean(enabled);
+    return { ok: true, ...this.getMonitorStatus() };
   }
 
   // ── private ─────────────────────────────────────────────────────────────
@@ -255,8 +285,9 @@ class WifiScanner extends EventEmitter {
       ssid:      ssid || '(hidden)',
       mac,
       rssi,
-      // DoA requires a directional antenna or phased array; emit 0 as placeholder.
-      doa:       0,
+      doa:       null,
+      bearingAvailable: false,
+      bearingMethod: 'unavailable',
       freqMHz,
       channel,
       protocol,

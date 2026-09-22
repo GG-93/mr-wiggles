@@ -126,6 +126,8 @@ class DemoSDR extends EventEmitter {
         mac:       sig.mac,
         rssi:      Math.round(rssi * 10) / 10,
         doa:       Math.round(sig.baseDoa * 10) / 10,
+        bearingAvailable: true,
+        bearingMethod: 'demo-simulated-doa',
         freqMHz:   sig.freqMHz,
         channel:   sig.channel,
         protocol:  sig.protocol,

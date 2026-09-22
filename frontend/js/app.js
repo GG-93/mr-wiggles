@@ -10,6 +10,10 @@
   const canvas        = document.getElementById('js-canvas');
   const statusDot     = document.getElementById('js-status-dot');
   const statusText    = document.getElementById('js-status-text');
+  const sensorStatus  = document.getElementById('js-sensor-status');
+  const sensorConnect = document.getElementById('js-sensor-connect');
+  const monitorToggle = document.getElementById('js-monitor-toggle');
+  const monitorStatus = document.getElementById('js-monitor-status');
   const targetSelect  = document.getElementById('js-target-select');
   const signalList    = document.getElementById('js-signal-list');
   const locatedBanner = document.getElementById('js-located-banner');
@@ -26,10 +30,27 @@
   // ── State ─────────────────────────────────────────────────────────────
   let signals   = [];
   let targetId  = null;
+  const sensorSource = new SensorSource();
 
   // ── Renderer ──────────────────────────────────────────────────────────
   const renderer = new Renderer(canvas);
   renderer.start();
+
+  sensorSource.addEventListener('update', (e) => {
+    const state = e.detail || {};
+    renderer.setOrientation(state.heading || 0);
+  });
+
+  sensorSource.addEventListener('status', (e) => {
+    const state = e.detail || {};
+    sensorStatus.textContent = state.connected
+      ? `Connected (${state.source})`
+      : 'No sensor';
+  });
+
+  sensorConnect.addEventListener('click', async () => {
+    await sensorSource.connect();
+  });
 
   // ── WebSocket ─────────────────────────────────────────────────────────
   const wsUrl = `ws://${location.host}/ws`;
@@ -57,6 +78,24 @@
   });
 
   ws.connect();
+  loadScannerConfig();
+
+  monitorToggle.addEventListener('change', async () => {
+    try {
+      const resp = await fetch('/api/scanner-config/wifi-monitor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: monitorToggle.checked }),
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.ok) {
+        monitorToggle.checked = !monitorToggle.checked;
+      }
+      await loadScannerConfig();
+    } catch (_) {
+      monitorToggle.checked = !monitorToggle.checked;
+    }
+  });
 
   // ── Signal selection ──────────────────────────────────────────────────
   targetSelect.addEventListener('change', () => {
@@ -179,7 +218,9 @@
     infoSsid.textContent     = sig.ssid || '—';
     infoMac.textContent      = sig.mac || '—';
     infoRssi.textContent     = sig.rssi != null ? `${sig.rssi.toFixed(1)} dBm` : '—';
-    infoDoa.textContent      = sig.doa != null ? `${sig.doa.toFixed(1)}°` : '—';
+    infoDoa.textContent      = sig.bearingAvailable === false
+      ? 'bearing estimate unavailable'
+      : (sig.doa != null ? `${sig.doa.toFixed(1)}°` : '—');
     infoFreq.textContent     = sig.freqMHz ? `${sig.freqMHz} MHz` : '—';
     infoChannel.textContent  = sig.channel || '—';
     infoProtocol.textContent = sig.protocol || '—';
@@ -198,6 +239,31 @@
     if (s < 0.6) return '#00e5ff';
     if (s < 0.8) return '#76ff03';
     return '#ff4081';
+  }
+
+  async function loadScannerConfig() {
+    try {
+      const resp = await fetch('/api/scanner-config');
+      const data = await resp.json();
+      const wifi = data && data.wifiMonitor ? data.wifiMonitor : null;
+      if (!wifi) {
+        monitorToggle.disabled = true;
+        monitorStatus.textContent = 'Safe mode';
+        return;
+      }
+      monitorToggle.checked = Boolean(wifi.enabled);
+      monitorToggle.disabled = !wifi.canEnable;
+      if (wifi.enabled) {
+        monitorStatus.textContent = 'Monitor mode enabled';
+      } else if (!wifi.canEnable) {
+        monitorStatus.textContent = wifi.reason || 'Monitor mode unavailable';
+      } else {
+        monitorStatus.textContent = 'Safe mode';
+      }
+    } catch (_) {
+      monitorToggle.disabled = true;
+      monitorStatus.textContent = 'Safe mode';
+    }
   }
 
 })();

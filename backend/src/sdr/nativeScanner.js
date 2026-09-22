@@ -28,6 +28,7 @@ class NativeScanner extends EventEmitter {
   constructor() {
     super();
     this._scanners = [];
+    this._wifiScanner = null;
   }
 
   start() {
@@ -39,6 +40,7 @@ class NativeScanner extends EventEmitter {
     wifi.on('error', (err)    => console.error('[WifiScanner]', err.message));
     wifi.start();
     this._scanners.push(wifi);
+    this._wifiScanner = wifi;
 
     // ── BLE (enabled unless ENABLE_BLE=false) ────────────────────────────
     if (ENABLE_BLE) {
@@ -69,7 +71,23 @@ class NativeScanner extends EventEmitter {
       try { s.stop(); } catch (_) {}
     });
     this._scanners = [];
+    this._wifiScanner = null;
     console.log('[NativeScanner] All scanners stopped');
+  }
+
+  getScannerConfig() {
+    return {
+      wifiMonitor: this._wifiScanner
+        ? this._wifiScanner.getMonitorStatus()
+        : { enabled: false, canEnable: false, reason: 'wifi scanner unavailable' },
+    };
+  }
+
+  setWifiMonitorMode(enabled) {
+    if (!this._wifiScanner) {
+      return { ok: false, enabled: false, canEnable: false, reason: 'wifi scanner unavailable' };
+    }
+    return this._wifiScanner.setMonitorMode(enabled);
   }
 }
 
