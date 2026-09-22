@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0a0a0a" rx="96" />
+  <circle cx="256" cy="256" r="30" fill="#00e5ff" />
+  <path d="M256 96 A160 160 0 0 1 416 256" stroke="#76ff03" stroke-width="28" fill="none" stroke-linecap="round"/>
+  <path d="M256 144 A112 112 0 0 1 368 256" stroke="#00e5ff" stroke-width="22" fill="none" stroke-linecap="round"/>
+  <path d="M256 192 A64 64 0 0 1 320 256" stroke="#ff4081" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <text x="256" y="452" text-anchor="middle" fill="#ff4081" font-size="48" font-family="monospace">WIGGLES</text>
+</svg>

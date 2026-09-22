@@ -52,6 +52,7 @@ npm start
 ```
 
 Open **http://localhost:3000** in your browser.
+- Mobile/PWA entrypoint: **http://localhost:3000/mobile**
 
 ---
 
@@ -97,16 +98,28 @@ mr-wiggles/
 │   └── .env.example
 ├── frontend/
 │   ├── index.html
+│   ├── mobile.html             Mobile-first web app shell
+│   ├── manifest.json           PWA manifest
+│   ├── sw.js                   Service worker (offline fallback)
 │   ├── js/
 │   │   ├── app.js                 Main controller
+│   │   ├── mobile-app.js          Mobile touch gestures + PWA bootstrapping
 │   │   ├── renderer.js            Canvas animation engine
 │   │   └── wsClient.js            WebSocket client (auto-reconnect)
 │   └── css/
-│       └── style.css
+│       ├── style.css
+│       └── mobile.css             Mobile-first responsive overrides
+├── embedded/                      PlatformIO firmware (Cardputer/CoreS3)
+│   ├── platformio.ini
+│   ├── src/
+│   └── README.md
 ├── scripts/
 │   └── install-sdr.sh             SDR driver installer (Linux)
 ├── docs/
-│   └── extending-antennas.md      Guide: add new SDR backends
+│   ├── extending-antennas.md      Guide: add new SDR backends
+│   ├── mobile-guide.md            iOS/Android install + usage
+│   ├── cardputer-guide.md         Cardputer/CoreS3 flashing guide
+│   └── deployment.md              Release artifact deployment notes
 ├── package.json                   Root workspace
 └── README.md
 ```

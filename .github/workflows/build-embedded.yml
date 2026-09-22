@@ -1,0 +1,70 @@
+name: Build Embedded Binaries
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'embedded/**'
+      - '.github/workflows/build-embedded.yml'
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env_name: [cardputer, cores3]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PlatformIO and esptool
+        run: |
+          pip install platformio esptool
+
+      - name: Build firmware
+        run: |
+          cd embedded
+          pio run -e ${{ matrix.env_name }}
+
+      - name: Merge binaries
+        run: |
+          cd embedded
+          python -m esptool --chip esp32s3 merge_bin -o .pio/build/${{ matrix.env_name }}/mr-wiggles-${{ matrix.env_name }}-merged.bin \
+            0x0 .pio/build/${{ matrix.env_name }}/bootloader.bin \
+            0x8000 .pio/build/${{ matrix.env_name }}/partitions.bin \
+            0x10000 .pio/build/${{ matrix.env_name }}/firmware.bin
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mr-wiggles-${{ matrix.env_name }}-bin
+          path: embedded/.pio/build/${{ matrix.env_name }}/mr-wiggles-${{ matrix.env_name }}-merged.bin
+
+  release-assets:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4.1.3
+        with:
+          path: dist
+
+      - name: Attach binaries to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/mr-wiggles-cardputer-bin/mr-wiggles-cardputer-merged.bin
+            dist/mr-wiggles-cores3-bin/mr-wiggles-cores3-merged.bin
