@@ -39,7 +39,7 @@ jobs:
       - name: Merge binaries
         run: |
           cd embedded
-          python -m esptool --chip esp32s3 merge_bin -o .pio/build/${{ matrix.env_name }}/mr-wiggles-${{ matrix.env_name }}-merged.bin \
+          python -m esptool --chip esp32s3 merge-bin -o .pio/build/${{ matrix.env_name }}/mr-wiggles-${{ matrix.env_name }}-merged.bin \
             0x0 .pio/build/${{ matrix.env_name }}/bootloader.bin \
             0x8000 .pio/build/${{ matrix.env_name }}/partitions.bin \
             0x10000 .pio/build/${{ matrix.env_name }}/firmware.bin
