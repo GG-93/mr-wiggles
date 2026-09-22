@@ -39,7 +39,7 @@
   "upload": {
     "flash_size": "8MB",
     "maximum_ram_size": 327680,
-    "maximum_size": 8388608,
+    "maximum_size": 3342336,
     "require_upload_port": true,
     "speed": 460800
   },
