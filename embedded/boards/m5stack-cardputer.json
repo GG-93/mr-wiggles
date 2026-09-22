@@ -22,7 +22,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "pinouts"
+    "variant": "esp32s3"
   },
   "connectivity": [
     "bluetooth",
@@ -32,8 +32,7 @@
     "openocd_target": "esp32s3.cfg"
   },
   "frameworks": [
-    "arduino",
-    "espidf"
+    "arduino"
   ],
   "name": "M5Stack Cardputer",
   "upload": {
