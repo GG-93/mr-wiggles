@@ -43,6 +43,6 @@
     "require_upload_port": true,
     "speed": 460800
   },
-  "url": "https://docs.m5stack.com/en/core/StampS3",
+  "url": "https://docs.m5stack.com/en/core/Cardputer",
   "vendor": "M5Stack"
 }
