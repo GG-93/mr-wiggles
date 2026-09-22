@@ -6,6 +6,7 @@
     },
     "core": "esp32",
     "extra_flags": [
+      "-DARDUINO_M5Stack_StampS3",
       "-DARDUINO_M5STACK_CARDPUTER",
       "-DARDUINO_USB_CDC_ON_BOOT",
       "-DARDUINO_USB_MODE=1",
@@ -22,7 +23,7 @@
       ]
     ],
     "mcu": "esp32s3",
-    "variant": "esp32s3"
+    "variant": "m5stack_stamp_s3"
   },
   "connectivity": [
     "bluetooth",
