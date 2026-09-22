@@ -51,12 +51,23 @@ std::vector<Signal> WifiScanner::scan(bool demoMode) {
 void WifiScanner::ensureDemoSignals_() {
   if (!demoSignals_.empty()) return;
 
-  demoSignals_ = {
-      {"Demo_AP_1", "02:00:00:00:00:01", -58, 1, 2412, true, true},
-      {"Demo_AP_2", "02:00:00:00:00:02", -64, 6, 2437, true, true},
-      {"Demo_AP_3", "02:00:00:00:00:03", -72, 11, 2462, false, true},
-      {"Demo_AP_5G", "02:00:00:00:00:04", -68, 40, 5200, true, true},
+  demoSignals_.reserve(4);
+  auto pushDemoSignal = [this](const char* ssid, const char* bssid, int rssi, int channel, int freqMHz, bool active) {
+    Signal sig;
+    sig.ssid = ssid;
+    sig.bssid = bssid;
+    sig.rssi = rssi;
+    sig.channel = channel;
+    sig.freqMHz = freqMHz;
+    sig.active = active;
+    sig.demo = true;
+    demoSignals_.push_back(sig);
   };
+
+  pushDemoSignal("Demo_AP_1", "02:00:00:00:00:01", -58, 1, 2412, true);
+  pushDemoSignal("Demo_AP_2", "02:00:00:00:00:02", -64, 6, 2437, true);
+  pushDemoSignal("Demo_AP_3", "02:00:00:00:00:03", -72, 11, 2462, false);
+  pushDemoSignal("Demo_AP_5G", "02:00:00:00:00:04", -68, 40, 5200, true);
 }
 
 int WifiScanner::channelToFrequency_(int channel) const {
