@@ -4,6 +4,7 @@ require('dotenv').config();
 const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const WebSocketServer = require('./utils/wsServer');
 const SignalManager = require('./processors/signalManager');
@@ -13,19 +14,48 @@ const NativeScanner = require('./sdr/nativeScanner');
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = process.env.HOST || 'localhost';
 const DEMO_MODE = process.env.DEMO_MODE !== 'false';
+const DEFAULT_ALLOWED_ORIGINS = new Set([
+  `http://${HOST}:${PORT}`,
+  `https://${HOST}:${PORT}`,
+  'http://localhost:3000',
+  'https://localhost:3000',
+]);
+const configuredCorsOrigins = new Set(
+  (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean)
+);
 
 // ── Express app ──────────────────────────────────────────────────────────────
 const app = express();
 app.use(cors({
-  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((v) => v.trim()) : true,
+  origin(origin, callback) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    if (DEFAULT_ALLOWED_ORIGINS.has(origin) || configuredCorsOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
   methods: ['GET', 'POST', 'OPTIONS'],
 }));
 app.use(express.json());
 
+const mobileRouteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Serve frontend static files
 const frontendDir = path.resolve(__dirname, '../../frontend');
 app.use(express.static(frontendDir));
-app.get('/mobile', (_req, res) => res.sendFile(path.join(frontendDir, 'mobile.html')));
+app.get('/mobile', mobileRouteLimiter, (_req, res) => res.sendFile(path.join(frontendDir, 'mobile.html')));
 
 // REST endpoints
 app.get('/api/status', (_req, res) => {
