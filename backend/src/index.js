@@ -16,12 +16,16 @@ const DEMO_MODE = process.env.DEMO_MODE !== 'false';
 
 // ── Express app ──────────────────────────────────────────────────────────────
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((v) => v.trim()) : true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+}));
 app.use(express.json());
 
 // Serve frontend static files
 const frontendDir = path.resolve(__dirname, '../../frontend');
 app.use(express.static(frontendDir));
+app.get('/mobile', (_req, res) => res.sendFile(path.join(frontendDir, 'mobile.html')));
 
 // REST endpoints
 app.get('/api/status', (_req, res) => {
@@ -70,6 +74,7 @@ server.listen(PORT, HOST, () => {
   console.log(`Mr. Wiggles backend running at http://${HOST}:${PORT}`);
   console.log(`Mode: ${DEMO_MODE ? 'DEMO (synthetic data)' : 'LIVE (WiFi + BLE + ESP32)'}`);
   console.log(`Frontend: http://${HOST}:${PORT}`);
+  console.log(`Mobile:   http://${HOST}:${PORT}/mobile`);
   sdr.start();
 });
 

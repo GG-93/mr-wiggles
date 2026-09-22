@@ -1,0 +1,117 @@
+:root {
+  --mobile-header-h: 52px;
+}
+
+html, body.mobile-app {
+  width: 100%;
+  min-height: 100%;
+  overflow: auto;
+  overscroll-behavior-y: contain;
+}
+
+body.mobile-app {
+  padding-top: calc(var(--mobile-header-h) + env(safe-area-inset-top));
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+body.mobile-app .header {
+  height: calc(var(--mobile-header-h) + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+}
+
+body.mobile-app .layout {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  min-height: calc(100dvh - var(--mobile-header-h) - env(safe-area-inset-top));
+  padding-top: 0;
+}
+
+body.mobile-app .canvas-wrapper {
+  min-height: 48dvh;
+  max-height: 58dvh;
+}
+
+body.mobile-app .swipe-hint {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 4px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+body.mobile-app .sidebar {
+  width: 100%;
+  border-left: 0;
+  border-top: 1px solid var(--border);
+  max-height: none;
+  overflow-y: visible;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+body.mobile-app .panel {
+  padding: 12px;
+}
+
+body.mobile-app .panel__title {
+  font-size: 12px;
+}
+
+body.mobile-app .signal-select,
+body.mobile-app .signal-list__item {
+  min-height: 40px;
+  touch-action: manipulation;
+}
+
+body.mobile-app .signal-list__item {
+  padding: 10px 0;
+}
+
+body.mobile-app .signal-list__name {
+  font-size: 12px;
+}
+
+.offline-banner {
+  position: fixed;
+  top: calc(var(--mobile-header-h) + env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  z-index: 200;
+  padding: 6px 10px;
+  text-align: center;
+  font-size: 12px;
+  background: #fbc02d;
+  color: #000;
+}
+
+@media (orientation: landscape) {
+  body.mobile-app .layout {
+    flex-direction: row;
+    min-height: calc(100dvh - var(--mobile-header-h) - env(safe-area-inset-top));
+  }
+
+  body.mobile-app .canvas-wrapper {
+    min-height: 100%;
+    max-height: none;
+    width: 62%;
+  }
+
+  body.mobile-app .sidebar {
+    width: 38%;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 900px) {
+  body.mobile-app .canvas-wrapper { width: 70%; }
+  body.mobile-app .sidebar { width: 30%; }
+}

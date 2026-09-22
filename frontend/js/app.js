@@ -32,7 +32,8 @@
   renderer.start();
 
   // ── WebSocket ─────────────────────────────────────────────────────────
-  const wsUrl = `ws://${location.host}/ws`;
+  const wsScheme = location.protocol === 'https:' ? 'wss' : 'ws';
+  const wsUrl = `${wsScheme}://${location.host}/ws`;
   const ws = new WsClient(wsUrl);
 
   ws.addEventListener('open', () => {
@@ -58,6 +59,11 @@
 
   ws.connect();
 
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) renderer.stop();
+    else renderer.start();
+  });
+
   // ── Signal selection ──────────────────────────────────────────────────
   targetSelect.addEventListener('change', () => {
     targetId = targetSelect.value || null;
@@ -71,6 +77,7 @@
       }).catch(() => {});
     }
     updateInfoPanel();
+    document.dispatchEvent(new CustomEvent('wiggles:target-changed', { detail: { targetId } }));
   });
 
   // ── Core update handler ───────────────────────────────────────────────
@@ -88,6 +95,7 @@
     updateSignalList();
     updateInfoPanel();
     updateLocatedBanner();
+    document.dispatchEvent(new CustomEvent('wiggles:updated', { detail: { signals, targetId } }));
   }
 
   // ── UI helpers ────────────────────────────────────────────────────────
@@ -200,4 +208,23 @@
     return '#ff4081';
   }
 
+  function selectTargetById(id) {
+    if (!id || !targetSelect.querySelector(`option[value="${id}"]`)) return;
+    targetSelect.value = id;
+    targetSelect.dispatchEvent(new Event('change'));
+  }
+
+  function selectTargetByOffset(offset) {
+    if (!signals.length) return;
+    const idx = Math.max(0, signals.findIndex((s) => s.id === targetId));
+    const next = (idx + offset + signals.length) % signals.length;
+    selectTargetById(signals[next].id);
+  }
+
+  window.MrWigglesApp = {
+    getSignals: () => signals.slice(),
+    getTargetId: () => targetId,
+    selectTargetById,
+    selectTargetByOffset,
+  };
 })();
